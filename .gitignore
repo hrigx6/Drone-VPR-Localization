@@ -1,0 +1,20 @@
+# data — too large for git
+data/
+*.npy
+*.faiss
+
+# python
+__pycache__/
+*.pyc
+*.pyo
+.env
+*.egg-info/
+
+# jupyter
+.ipynb_checkpoints/
+
+# conda
+*.conda
+
+# os
+.DS_Store

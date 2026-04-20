@@ -1,0 +1,21 @@
+name: vpr
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - pytorch
+  - torchvision
+  - cudatoolkit=11.8
+  - pip
+  - pip:
+    - faiss-cpu
+    - timm
+    - opencv-python
+    - matplotlib
+    - folium
+    - tqdm
+    - numpy
+    - pillow
+    - jupyter
