@@ -13,7 +13,7 @@ MODELS_DIR.mkdir(exist_ok=True)
 BATCH_SIZE  = 32
 NUM_EPOCHS  = 5
 LR          = 1e-5
-MARGIN      = 0.3
+MARGIN      = 0.2
 NUM_WORKERS = 4
 SAVE_EVERY  = 2
 

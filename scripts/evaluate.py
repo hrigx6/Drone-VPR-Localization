@@ -93,7 +93,7 @@ def evaluate(k_values=[1, 5, 10]):
     print("="*45)
 
     # ── save ──
-    out = RESULTS_DIR / "eval_finetuned.json"
+    out = RESULTS_DIR / "eval_finetuned_v2.json"
     with open(out, "w") as f:
         json.dump(results, f, indent=2)
     print(f"\nSaved → {out}")
