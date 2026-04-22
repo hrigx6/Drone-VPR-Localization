@@ -1,17 +1,16 @@
 # Collaborator Setup Guide
 
-Complete setup guide to reproduce the project from scratch on a new machine.
-Follow these steps in order — do not skip any.
+How to get this project running on a new machine from scratch.
+Takes about 20-30 minutes end to end.
 
 ---
 
 ## Prerequisites
 
-- Ubuntu 20.04 or 22.04
-- NVIDIA GPU with 8GB+ VRAM (tested on RTX 4060 Laptop)
-- NVIDIA drivers installed
+- Ubuntu 20.04, 22.04, or 24.04
+- NVIDIA GPU with 8GB+ VRAM (tested: RTX 4060 Laptop)
+- NVIDIA drivers installed (`nvidia-smi` should work)
 - Git installed
-- Internet access
 
 ---
 
@@ -22,42 +21,44 @@ wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/
 bash ~/miniconda.sh -b -p ~/miniconda3
 ~/miniconda3/bin/conda init bash
 source ~/.bashrc
-conda --version  # should print conda 24.x.x or higher
+conda --version
 ```
 
 ---
 
-## Step 2 — Set up SSH key for this repo
+## Step 2 — SSH key setup (isolated from your other git accounts)
 
-This project uses a separate GitHub account (hrigx6) isolated from any
-other git identity on your machine. Your global git config is not affected.
+This repo uses a separate GitHub account `hrigx6`. The setup below keeps it
+completely isolated — your existing global git identity is untouched.
 
 ```bash
-# generate a new SSH key for this project
+# generate dedicated SSH key
 ssh-keygen -t ed25519 -C "vpr-project" -f ~/.ssh/id_vpr
 
-# add SSH host alias
+# add host alias to ~/.ssh/config
 cat >> ~/.ssh/config << 'EOF'
 
-# VPR project account
 Host github-vpr
     HostName github.com
     User git
     IdentityFile ~/.ssh/id_vpr
 EOF
 
-# copy public key and add to GitHub (hrigx6 account)
+# add public key to GitHub (hrigx6 account)
+# Settings → SSH and GPG keys → New SSH key → paste this:
 cat ~/.ssh/id_vpr.pub
-# go to github.com → Settings → SSH keys → New SSH key → paste it
 
-# test connection
+# test
 ssh -T git@github-vpr
 # expected: Hi hrigx6! You've successfully authenticated...
 ```
 
+**To switch back to your other work:** just `cd` to your other project.
+The VPR identity only activates inside this repo folder.
+
 ---
 
-## Step 3 — Clone the repo
+## Step 3 — Clone and set repo identity
 
 ```bash
 mkdir -p ~/workspace/vpr
@@ -65,12 +66,12 @@ cd ~/workspace/vpr
 git clone git@github-vpr:hrigx6/Drone-VPR-Localization.git
 cd Drone-VPR-Localization
 
-# set repo-level git identity (does not affect global config)
+# repo-level identity (does not affect your global git config)
 git config user.name "hrigx6"
 git config user.email "hrigsuryawanshi@gmail.com"
 
-# verify — should show both global and local identity
-git config --list | grep user
+# pull model weights (stored via Git LFS)
+git lfs pull
 ```
 
 ---
@@ -78,19 +79,15 @@ git config --list | grep user
 ## Step 4 — Create conda environment
 
 ```bash
-cd ~/workspace/vpr/Drone-VPR-Localization
 conda env create -f environment.yml
 conda activate vpr
 
-# verify key packages
-python -c "import torch; import faiss; import timm; import cv2; print('all good')"
-
-# verify CUDA
+# verify
+python -c "import torch; import faiss; print('torch:', torch.__version__)"
 python -c "import torch; print('CUDA:', torch.cuda.is_available())"
-# should print: CUDA: True
 ```
 
-If CUDA returns False, reinstall PyTorch with CUDA support:
+If CUDA returns False:
 ```bash
 pip uninstall torch torchvision -y
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
@@ -98,163 +95,124 @@ pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
 
 ---
 
-## Step 5 — Download datasets
+## Step 5 — Download University-1652 dataset
 
-### University-1652
-Request download access from:
-`https://github.com/layumi/University1652-Baseline`
+Request access at: `https://github.com/layumi/University1652-Baseline`
 
-Once downloaded, extract outside the repo:
 ```bash
 mkdir -p ~/workspace/vpr/data
 unzip University-Release.zip -d ~/workspace/vpr/data/
 
-# create symlink inside repo
+# symlink into repo (keeps large data outside git)
 cd ~/workspace/vpr/Drone-VPR-Localization
 ln -s ~/workspace/vpr/data/University-Release data/university1652
 
-# verify structure
+# verify
 ls data/university1652/
 # should show: readme.txt  test  train
 ```
 
-### GPS metadata (KML files)
-Download the "Latitude and Longitude" KML zip from the University-1652
-GitHub README (Google Drive link labeled [Latitude and Longitude]).
-
-Extract to:
+Also download the GPS KML files (link labeled [Latitude and Longitude] in the dataset README):
 ```bash
-mkdir -p ~/workspace/vpr/data/university1652-gps
-unzip <downloaded_file>.zip -d ~/workspace/vpr/data/
-```
-
-Parse GPS into lookup JSON:
-```bash
-# update the KML_DIR path in scripts/parse_gps.py to match your extraction path
+unzip <kml_file>.zip -d ~/workspace/vpr/data/university1652-gps/
 PYTHONPATH=scripts python scripts/parse_gps.py
-# should print: Parsed: 1652 buildings, Missing: 0
 # saves → configs/gps_index.json
 ```
 
 ---
 
-## Step 6 — Extract features (zero-shot baseline)
+## Step 6 — Run the pipeline
+
+All scripts require `PYTHONPATH=scripts` prefix due to a ROS/Python conflict.
 
 ```bash
-conda activate vpr
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+
+# feature extraction (uses EXP-08 weights from git lfs)
 PYTHONPATH=scripts python scripts/extract_features.py
-# downloads DINOv2 weights on first run (~85MB)
-# saves → models/gallery_embeddings.npy, query_embeddings.npy etc.
-```
 
----
-
-## Step 7 — Build FAISS index
-
-```bash
-PYTHONPATH=scripts python scripts/build_index.py
-# saves → models/gallery.index
-```
-
----
-
-## Step 8 — Run zero-shot evaluation (baseline)
-
-```bash
-PYTHONPATH=scripts python scripts/evaluate.py
-# saves → results/eval_zeroshot.json
-# expected: R@1 ~9%, GPS median ~687km (before fine-tuning)
-```
-
----
-
-## Step 9 — Fine-tune DINOv2
-
-```bash
-PYTHONPATH=scripts python scripts/train.py
-# trains for 10 epochs, ~1 hour on RTX 4060
-# saves → models/dinov2_finetuned.pth
-# saves checkpoints every 2 epochs → models/checkpoint_epoch_N.pth
-```
-
-To resume if interrupted:
-```bash
-PYTHONPATH=scripts python scripts/train.py
-# automatically detects latest checkpoint and resumes
-```
-
----
-
-## Step 10 — Evaluate fine-tuned model
-
-Re-extract features with fine-tuned weights, rebuild index, evaluate:
-```bash
-PYTHONPATH=scripts python scripts/extract_features.py
+# build FAISS index
 PYTHONPATH=scripts python scripts/build_index.py
 
-# update output filename in evaluate.py from eval_zeroshot to eval_finetuned
+# evaluate (should reproduce R@1=87.54%)
 PYTHONPATH=scripts python scripts/evaluate.py
-# saves → results/eval_finetuned.json
 ```
 
 ---
 
-## Project structure
----
+## Step 7 — Boston pipeline (optional, needs Mapbox token)
 
-## Project structure
-Drone-VPR-Localization/
-├── configs/
-│   └── gps_index.json        # GPS lookup for all 1652 buildings
-├── data/
-│   └── university1652 → symlink to University-Release
-├── models/                   # gitignored — generated locally
-│   ├── gallery_embeddings.npy
-│   ├── gallery_ids.npy
-│   ├── gallery_paths.npy
-│   ├── query_embeddings.npy
-│   ├── query_ids.npy
-│   ├── query_paths.npy
-│   ├── gallery.index
-│   └── dinov2_finetuned.pth
-├── notebooks/
-├── results/
-│   ├── eval_zeroshot.json    # R@1=9.34%, GPS=687km
-│   └── eval_finetuned.json   # R@1=TBD after training
-├── scripts/
-│   ├── dataloader.py         # image loading + transforms
-│   ├── extract_features.py   # DINOv2 feature extraction
-│   ├── build_index.py        # FAISS index builder
-│   ├── query.py              # retrieval pipeline
-│   ├── evaluate.py           # Recall@k + GPS error metrics
-│   ├── train_dataset.py      # triplet dataset for fine-tuning
-│   ├── train.py              # fine-tuning script
-│   └── parse_gps.py          # KML → GPS JSON parser
-├── environment.yml           # conda environment
-├── README.md                 # project overview
-└── COLLABORATOR_SETUP.md     # this file
+```bash
+# add your Mapbox token
+echo "MAPBOX_TOKEN=your_token_here" > .env
+
+# Boston tiles already committed to data/boston/tiles_z18/
+# just encode and index them
+PYTHONPATH=scripts python scripts/boston_encoder.py
+PYTHONPATH=scripts python scripts/boston_index.py
+```
 
 ---
 
-## Known issues
+## What each script does
 
-- ROS Humble conflict: if ROS is installed, prefix all script runs with
-  `PYTHONPATH=scripts` to avoid the ROS `scripts` package conflict
-- CUDA not available after killed processes: run
-  `sudo rmmod nvidia_uvm && sudo modprobe nvidia_uvm` to reset
-- Lid close suspends training: edit `/etc/systemd/logind.conf`,
-  set `HandleLidSwitch=ignore`, restart `systemd-logind`
-- For long training runs use tmux:
-  `tmux new-session -s training` → run training → `Ctrl+B D` to detach
+| Script | Purpose |
+|---|---|
+| `model.py` | DINOv2WithHead architecture — backbone + projection head |
+| `dataloader.py` | Loads University-1652 images with transforms |
+| `train_dataset.py` | Triplet dataset with rotation augmentation + hard negative mining |
+| `train.py` | Fine-tunes DINOv2 — discriminative LR, warmup, cosine schedule |
+| `extract_features.py` | Runs DINOv2 + TTA on all images, saves embeddings |
+| `build_index.py` | Builds FAISS IndexFlatIP from gallery embeddings |
+| `query.py` | Single/batch query against University-1652 FAISS index |
+| `evaluate.py` | Computes Recall@1/5/10, GPS error, threshold analysis |
+| `parse_gps.py` | Parses KML files → gps_index.json |
+| `visualize.py` | Generates ablation plots and retrieval grid |
+| `boston_tile_downloader.py` | Downloads Mapbox satellite tiles for Boston area |
+| `boston_encoder.py` | Encodes Boston tiles with EXP-08 model + TTA |
+| `boston_index.py` | Builds Boston FAISS index |
+| `boston_query.py` | Queries Boston index, returns lat/lon directly |
+| `boston_validate.py` | Validates pipeline on DJI footage vs GPS ground truth |
 
 ---
 
-## Current results
+## Why we do things this way
 
-| Model | R@1 | R@5 | R@10 | GPS median |
-|---|---|---|---|---|
-| Zero-shot DINOv2 | 9.34% | 19.65% | 25.74% | 687km |
-| Fine-tuned (v1) | 8.88% | 20.38% | 27.39% | 870km |
-| Fine-tuned (v2) | TBD | TBD | TBD | TBD |
+**Why freeze the backbone?**
+DINOv2 was pretrained on 142M images. Fine-tuning all layers with a high LR
+overwrites that knowledge (catastrophic forgetting). Freezing most layers and
+only updating the last 4 transformer blocks preserves pretrained features while
+adapting to drone-satellite matching. This single decision caused a 7.5×
+improvement in Recall@1.
 
+**Why triplet loss over InfoNCE?**
+InfoNCE needs large batches (256+) to shine. On our dataset size (37,854 images,
+batch=128) triplet loss with hard negative mining provides stronger gradient
+signal. InfoNCE consistently underperformed across EXP-05 and EXP-06.
+
+**Why TTA (test-time augmentation)?**
+Satellite tiles have no canonical orientation — north can point any direction.
+Averaging embeddings from 4 rotations (0/90/180/270°) makes the model
+orientation-invariant at inference with zero retraining cost.
+
+**Why PYTHONPATH=scripts?**
+ROS Humble installs a `scripts` Python package that conflicts with our local
+`scripts/` folder. The prefix forces Python to use our local scripts first.
+
+**Why zoom 18 for Boston tiles?**
+At 61m altitude (200ft Boston limit), the DJI Mini 5 Pro covers ~106m×106m
+per frame. Zoom 18 tiles are 76m×76m — the closest scale match. This gives
+the best retrieval performance. Zoom 20 tiles (19m) are used on-demand for
+SuperGlue refinement after retrieval.
+
+---
+
+## Troubleshooting
+
+| Problem | Fix |
+|---|---|
+| `CUDA: False` after killed process | `sudo rmmod nvidia_uvm && sudo modprobe nvidia_uvm` |
+| `ImportError: cannot import name X from scripts` | Add `PYTHONPATH=scripts` prefix |
+| Training killed by screen sleep | `gsettings set org.gnome.desktop.session idle-delay 0` |
+| Git push blocked (secret detected) | Move API keys to `.env`, never hardcode |
+| Out of memory during training | Reduce `BATCH_SIZE` in `train.py`, enable AMP |
