@@ -18,4 +18,9 @@ __pycache__/
 
 # os
 .DS_Store
-models/
+
+models/*.npy
+models/*.faiss
+models/exp*/checkpoint_epoch_*.pth
+.env
+.env
