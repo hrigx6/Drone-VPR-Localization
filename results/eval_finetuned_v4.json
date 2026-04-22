@@ -1,0 +1,13 @@
+{
+  "n_queries": 37855,
+  "n_gallery": 951,
+  "recalls": {
+    "R@1": 82.3,
+    "R@5": 94.43,
+    "R@10": 96.42
+  },
+  "gps_error_median_m": 0.0,
+  "gps_error_mean_m": 183711.3,
+  "gps_error_p75_m": 0.0,
+  "failed_gps_lookup": 0
+}

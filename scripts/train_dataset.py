@@ -2,42 +2,54 @@ import random
 from pathlib import Path
 from PIL import Image
 from torch.utils.data import Dataset
-from dataloader import get_transform
+import torchvision.transforms as T
+from dataloader import IMAGENET_MEAN, IMAGENET_STD
+
+
+def get_drone_transform(img_size=224):
+    return T.Compose([
+        T.Resize((img_size, img_size)),
+        T.ColorJitter(brightness=0.3, contrast=0.3, saturation=0.3),
+        T.ToTensor(),
+        T.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD),
+    ])
+
+
+def get_sat_transform(img_size=224):
+    return T.Compose([
+        T.Resize((img_size, img_size)),
+        T.RandomRotation(180),
+        T.ColorJitter(brightness=0.3, contrast=0.3, saturation=0.3),
+        T.RandomHorizontalFlip(),
+        T.ToTensor(),
+        T.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD),
+    ])
+
 
 class TripletDroneDataset(Dataset):
     """
-    Returns triplets: (drone_img, sat_positive, sat_negative)
-    
-    For each sample:
-      anchor   = one drone image of building ID X
-      positive = satellite image of building ID X
-      negative = satellite image of randomly sampled building ID Y (Y != X)
-
-    ML concept — why triplets:
-      We want embeddings where same-place images cluster together
-      and different-place images are spread apart.
-      Triplet loss directly optimizes this geometric property.
+    Returns triplets: (drone_img, sat_positive, sat_negative, building_id)
+    Drone gets ColorJitter only; satellite gets rotation + jitter + hflip.
+    HNM is handled in the training loop (in-batch).
     """
-    def __init__(self, root_dir, transform=None):
-        self.root      = Path(root_dir)
-        self.transform = transform or get_transform()
+    def __init__(self, root_dir):
+        self.root          = Path(root_dir)
+        self.drone_tfm     = get_drone_transform()
+        self.sat_tfm       = get_sat_transform()
 
         drone_root = self.root / "drone"
         sat_root   = self.root / "satellite"
 
-        # build list of all drone images with their building ID
         self.drone_samples = []
         for img_path in sorted(drone_root.rglob("*.jp*g")):
             building_id = img_path.parent.name
             self.drone_samples.append((img_path, building_id))
 
-        # build satellite lookup: building_id → satellite image path
         self.sat_lookup = {}
         for img_path in sorted(sat_root.rglob("*.jp*g")):
             building_id = img_path.parent.name
             self.sat_lookup[building_id] = img_path
 
-        #self.drone_samples = self.drone_samples[:2000]    ##testing
         self.building_ids = list(self.sat_lookup.keys())
         print(f"  Drone images : {len(self.drone_samples)}")
         print(f"  Satellite    : {len(self.sat_lookup)} buildings")
@@ -48,23 +60,31 @@ class TripletDroneDataset(Dataset):
     def __getitem__(self, idx):
         drone_path, building_id = self.drone_samples[idx]
 
-        # anchor — drone image
-        anchor = self._load(drone_path)
+        anchor   = self._load(drone_path,                      self.drone_tfm)
+        positive = self._load(self.sat_lookup[building_id],    self.sat_tfm)
 
-        # positive — satellite of same building
-        positive = self._load(self.sat_lookup[building_id])
-
-        # negative — satellite of randomly different building
         neg_id = building_id
         while neg_id == building_id:
             neg_id = random.choice(self.building_ids)
-        negative = self._load(self.sat_lookup[neg_id])
+        negative = self._load(self.sat_lookup[neg_id], self.sat_tfm)
 
         return anchor, positive, negative, building_id
 
-    def _load(self, path):
+    def _load(self, path, tfm):
         img = Image.open(path).convert("RGB")
-        return self.transform(img)
+        return tfm(img)
+
+
+class PairDroneDataset(TripletDroneDataset):
+    """
+    Returns pairs instead of triplets: (anchor, positive, building_id).
+    Used with InfoNCE loss where in-batch negatives are implicit.
+    """
+    def __getitem__(self, idx):
+        drone_path, building_id = self.drone_samples[idx]
+        anchor   = self._load(drone_path,                   self.drone_tfm)
+        positive = self._load(self.sat_lookup[building_id], self.sat_tfm)
+        return anchor, positive, building_id
 
 
 if __name__ == "__main__":

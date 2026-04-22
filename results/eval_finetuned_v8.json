@@ -1,0 +1,218 @@
+{
+  "n_queries": 37855,
+  "n_gallery": 951,
+  "recalls": {
+    "R@1": 87.54,
+    "R@5": 96.11,
+    "R@10": 97.51
+  },
+  "gps_error_median_m": 0.0,
+  "gps_error_mean_m": 123236.3,
+  "gps_error_p75_m": 0.0,
+  "failed_gps_lookup": 0,
+  "threshold_analysis": [
+    {
+      "threshold": 0.4,
+      "coverage": 98.7,
+      "precision": 88.4,
+      "gps_p50_m": 0.0,
+      "gps_p75_m": 0.0
+    },
+    {
+      "threshold": 0.42,
+      "coverage": 97.6,
+      "precision": 89.0,
+      "gps_p50_m": 0.0,
+      "gps_p75_m": 0.0
+    },
+    {
+      "threshold": 0.44,
+      "coverage": 96.0,
+      "precision": 89.8,
+      "gps_p50_m": 0.0,
+      "gps_p75_m": 0.0
+    },
+    {
+      "threshold": 0.46,
+      "coverage": 94.1,
+      "precision": 90.7,
+      "gps_p50_m": 0.0,
+      "gps_p75_m": 0.0
+    },
+    {
+      "threshold": 0.48,
+      "coverage": 91.8,
+      "precision": 91.6,
+      "gps_p50_m": 0.0,
+      "gps_p75_m": 0.0
+    },
+    {
+      "threshold": 0.5,
+      "coverage": 89.0,
+      "precision": 92.5,
+      "gps_p50_m": 0.0,
+      "gps_p75_m": 0.0
+    },
+    {
+      "threshold": 0.52,
+      "coverage": 85.7,
+      "precision": 93.3,
+      "gps_p50_m": 0.0,
+      "gps_p75_m": 0.0
+    },
+    {
+      "threshold": 0.54,
+      "coverage": 82.1,
+      "precision": 94.1,
+      "gps_p50_m": 0.0,
+      "gps_p75_m": 0.0
+    },
+    {
+      "threshold": 0.56,
+      "coverage": 78.0,
+      "precision": 94.8,
+      "gps_p50_m": 0.0,
+      "gps_p75_m": 0.0
+    },
+    {
+      "threshold": 0.58,
+      "coverage": 73.6,
+      "precision": 95.5,
+      "gps_p50_m": 0.0,
+      "gps_p75_m": 0.0
+    },
+    {
+      "threshold": 0.6,
+      "coverage": 68.8,
+      "precision": 96.0,
+      "gps_p50_m": 0.0,
+      "gps_p75_m": 0.0
+    },
+    {
+      "threshold": 0.62,
+      "coverage": 63.4,
+      "precision": 96.5,
+      "gps_p50_m": 0.0,
+      "gps_p75_m": 0.0
+    },
+    {
+      "threshold": 0.64,
+      "coverage": 57.7,
+      "precision": 96.9,
+      "gps_p50_m": 0.0,
+      "gps_p75_m": 0.0
+    },
+    {
+      "threshold": 0.66,
+      "coverage": 51.6,
+      "precision": 97.2,
+      "gps_p50_m": 0.0,
+      "gps_p75_m": 0.0
+    },
+    {
+      "threshold": 0.68,
+      "coverage": 45.0,
+      "precision": 97.5,
+      "gps_p50_m": 0.0,
+      "gps_p75_m": 0.0
+    },
+    {
+      "threshold": 0.7,
+      "coverage": 38.3,
+      "precision": 97.8,
+      "gps_p50_m": 0.0,
+      "gps_p75_m": 0.0
+    },
+    {
+      "threshold": 0.72,
+      "coverage": 31.8,
+      "precision": 98.4,
+      "gps_p50_m": 0.0,
+      "gps_p75_m": 0.0
+    },
+    {
+      "threshold": 0.74,
+      "coverage": 25.6,
+      "precision": 98.7,
+      "gps_p50_m": 0.0,
+      "gps_p75_m": 0.0
+    },
+    {
+      "threshold": 0.76,
+      "coverage": 19.7,
+      "precision": 99.2,
+      "gps_p50_m": 0.0,
+      "gps_p75_m": 0.0
+    },
+    {
+      "threshold": 0.78,
+      "coverage": 14.5,
+      "precision": 99.6,
+      "gps_p50_m": 0.0,
+      "gps_p75_m": 0.0
+    },
+    {
+      "threshold": 0.8,
+      "coverage": 10.1,
+      "precision": 99.8,
+      "gps_p50_m": 0.0,
+      "gps_p75_m": 0.0
+    },
+    {
+      "threshold": 0.82,
+      "coverage": 6.6,
+      "precision": 100.0,
+      "gps_p50_m": 0.0,
+      "gps_p75_m": 0.0
+    },
+    {
+      "threshold": 0.84,
+      "coverage": 3.9,
+      "precision": 100.0,
+      "gps_p50_m": 0.0,
+      "gps_p75_m": 0.0
+    },
+    {
+      "threshold": 0.86,
+      "coverage": 1.9,
+      "precision": 100.0,
+      "gps_p50_m": 0.0,
+      "gps_p75_m": 0.0
+    },
+    {
+      "threshold": 0.88,
+      "coverage": 0.8,
+      "precision": 100.0,
+      "gps_p50_m": 0.0,
+      "gps_p75_m": 0.0
+    },
+    {
+      "threshold": 0.9,
+      "coverage": 0.3,
+      "precision": 100.0,
+      "gps_p50_m": 0.0,
+      "gps_p75_m": 0.0
+    },
+    {
+      "threshold": 0.92,
+      "coverage": 0.1,
+      "precision": 100.0,
+      "gps_p50_m": 0.0,
+      "gps_p75_m": 0.0
+    },
+    {
+      "threshold": 0.94,
+      "coverage": 0.0,
+      "precision": 100.0,
+      "gps_p50_m": 0.0,
+      "gps_p75_m": 0.0
+    }
+  ],
+  "recommended_threshold": {
+    "threshold": 0.58,
+    "coverage": 73.6,
+    "precision": 95.5,
+    "gps_p50_m": 0.0,
+    "gps_p75_m": 0.0
+  }
+}

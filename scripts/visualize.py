@@ -29,9 +29,15 @@ plt.rcParams.update({
 })
 
 EVAL_FILES = {
-    "Zero-shot":            RESULTS_DIR / "eval_zeroshot.json",
-    "FT v1\n(full, 1e-4)":  RESULTS_DIR / "eval_finetuned.json",
-    "FT v2\n(frozen, 1e-5)": RESULTS_DIR / "eval_finetuned_v2.json",
+    "Zero-shot":             RESULTS_DIR / "eval_zeroshot.json",
+    "FT v1\n(full, 1e-4)":   RESULTS_DIR / "eval_finetuned.json",
+    "FT v2\n(frozen, 1e-5)":  RESULTS_DIR / "eval_finetuned_v2.json",
+    "FT v3\n(cosine, e15)":   RESULTS_DIR / "eval_finetuned_v3.json",
+    "FT v4\n(aug+HNM+TTA)":  RESULTS_DIR / "eval_finetuned_v4.json",
+    "FT v5\n(InfoNCE+head)": RESULTS_DIR / "eval_finetuned_v5.json",
+    "FT v6\n(InfoNCE B128)": RESULTS_DIR / "eval_finetuned_v6.json",
+    "FT v7\n(+FN mask)":     RESULTS_DIR / "eval_finetuned_v7.json",
+    "FT v8\n(4blk+warmup)":  RESULTS_DIR / "eval_finetuned_v8.json",
 }
 
 
@@ -202,7 +208,7 @@ def plot_gps_cdf(top_k_indices, query_ids, gallery_ids, gps_index):
     ax.set_xscale("symlog", linthresh=0.01)
     ax.set_xlabel("GPS Error (km, symlog scale)")
     ax.set_ylabel("Queries within error (%)")
-    ax.set_title("GPS Error CDF — FT v2 Fine-tuned Model")
+    ax.set_title("GPS Error CDF — FT v8 (best model)")
     ax.set_ylim(0, 100)
     ax.set_xlim(left=0)
     ax.legend(fontsize=8)

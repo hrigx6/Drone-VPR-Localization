@@ -1,8 +1,10 @@
 import torch
+import torch.nn.functional as F
 import numpy as np
 from pathlib import Path
 from tqdm import tqdm
 from torch.utils.data import DataLoader
+import torchvision.transforms.functional as TF
 from dataloader import FlatImageDataset, get_transform
 
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
@@ -14,22 +16,14 @@ MODELS_DIR.mkdir(exist_ok=True)
 
 
 def load_dinov2(model_name="dinov2_vits14"):
-    """
-    Load DINOv2 from torch.hub.
-    Model options by size vs VRAM:
-      dinov2_vits14 — small,  384-dim,  ~1GB VRAM  (safe on any GPU)
-      dinov2_vitb14 — base,   768-dim,  ~2GB VRAM
-      dinov2_vitl14 — large,  1024-dim, ~4GB VRAM
-      dinov2_vitg14 — giant,  1536-dim, ~7GB VRAM  (needs 8GB+)
-    """
     print(f"Loading {model_name} on {DEVICE}...")
     model = torch.hub.load("facebookresearch/dinov2", model_name)
-    ckpt = MODELS_DIR / "dinov2_finetuned.pth"
+    ckpt  = Path("models/exp08/dinov2_finetuned.pth")
     if ckpt.exists():
         print(f"  Loading fine-tuned weights from {ckpt}")
         model.load_state_dict(torch.load(ckpt, map_location=DEVICE))
     else:
-        print("  No fine-tuned weights found, using zero-shot")
+        print("  No checkpoint found, using zero-shot")
     model.eval()
     model.to(DEVICE)
     print(f"  Embedding dim: {model.embed_dim}")
@@ -59,17 +53,16 @@ def extract(model, root_dir, split_name):
 
     print(f"\nExtracting features: {split_name} ({len(dataset)} images)...")
 
-    with torch.no_grad():              # no gradients needed — inference only
+    with torch.no_grad():
         for imgs, ids, paths in tqdm(loader, desc=split_name):
             imgs = imgs.to(DEVICE)
 
-            # forward pass — get CLS token embedding
-            # shape: [batch_size, embed_dim]
-            embeddings = model(imgs)
-
-            # L2 normalize — project onto unit hypersphere
-            # after this: ||embedding|| = 1 for every vector
-            embeddings = torch.nn.functional.normalize(embeddings, p=2, dim=1)
+            # TTA: average over 4 rotations, renormalize
+            emb_sum = torch.zeros(imgs.size(0), model.embed_dim, device=DEVICE)
+            for angle in [0, 90, 180, 270]:
+                rotated = TF.rotate(imgs, angle) if angle > 0 else imgs
+                emb_sum += F.normalize(model(rotated), p=2, dim=1)
+            embeddings = F.normalize(emb_sum, p=2, dim=1)
 
             all_embeddings.append(embeddings.cpu().numpy())
             all_ids.extend(ids)
