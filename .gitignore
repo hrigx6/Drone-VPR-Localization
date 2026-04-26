@@ -24,3 +24,11 @@ models/*.faiss
 models/exp*/checkpoint_epoch_*.pth
 .env
 .env
+dataset/frames/
+dataset/*.mp4
+dataset/*.SRT
+models/boston_gallery.index
+models/boston_gallery_embeddings.npy
+models/boston_gallery_names.npy
+models/boston_gps.json
+CLAUDE.md

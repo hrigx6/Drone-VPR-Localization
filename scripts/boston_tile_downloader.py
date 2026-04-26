@@ -3,6 +3,7 @@ import json
 import time
 import requests
 from pathlib import Path
+from dotenv import load_dotenv
 from math import floor, log, tan, pi, cos
 
 load_dotenv()
